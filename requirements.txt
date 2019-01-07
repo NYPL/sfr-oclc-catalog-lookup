@@ -1,0 +1,7 @@
+boto3
+coverage
+flake8
+marcalyx
+python-lambda
+pyyaml
+requests
