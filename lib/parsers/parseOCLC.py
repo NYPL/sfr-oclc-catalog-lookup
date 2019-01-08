@@ -24,14 +24,27 @@ def readFromMARC(marcRecord):
 
     instance = InstanceRecord()
 
-    # Control Fields (Identifiers)
+    # Control Field
+    oclcNumber = marcRecord['001'][0].value
+    instance.addIdentifier(**{
+        'type': 'oclc',
+        'identifier': oclcNumber,
+        'weight': 1
+    })
+
+    # Code Fields (Identifiers)
     logger.debug('Parsing 0X0-0XX Fields')
     controlData = [
         ('010', 'identifiers', 'a', 'lccn'),
         ('020', 'identifiers', 'a', 'isbn'),
         ('022', 'identifiers', 'a', 'issn'),
         ('050', 'identifiers', 'a', 'lcc'),
-        ('082', 'identifiers', 'a', 'ddc')
+        ('082', 'identifiers', 'a', 'ddc'),
+        ('010', 'identifiers', 'z', 'lccn'),
+        ('020', 'identifiers', 'z', 'isbn'),
+        ('022', 'identifiers', 'z', 'issn'),
+        ('050', 'identifiers', 'z', 'lcc'),
+        ('082', 'identifiers', 'z', 'ddc')
     ]
     for field in controlData:
         extractSubfieldValue(marcRecord, instance, field)
@@ -116,7 +129,6 @@ def readFromMARC(marcRecord):
 
 def extractHoldingsLinks(holdings, instance):
     for holding in holdings:
-        print(holding)
         if holding.ind1 != '4':
             continue
         try:
@@ -226,11 +238,10 @@ def extractSubfieldValue(data, record, fieldData):
                     role=role
                 ))
             elif attr == 'identifiers':
-                print(fieldValue)
                 controlField = fieldData[3]
                 record.addIdentifier(**{
                     'type': controlField,
-                    'identifier': fieldValue,
+                    'identifier': fieldValue.strip(),
                     'weight': 1
                 })
             else:
