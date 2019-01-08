@@ -49,6 +49,13 @@ def readFromMARC(marcRecord):
     for field in controlData:
         extractSubfieldValue(marcRecord, instance, field)
 
+    # Language Field
+    for lang in marcRecord['041'][0].subfield('a'):
+        if instance.language is None:
+            instance.language = lang.value
+        else:
+            instance.language += ';{}'.format(lang.value)
+
     # Title Fields
     logger.debug('Parsing 21X-24X Fields')
     titleData = [
