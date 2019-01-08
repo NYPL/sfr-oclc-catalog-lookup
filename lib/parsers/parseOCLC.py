@@ -25,13 +25,17 @@ def readFromMARC(marcRecord):
 
     instance = InstanceRecord()
 
-    # Control Field
+    # Control Fields
     oclcNumber = marcRecord['001'][0].value
     instance.addIdentifier(**{
         'type': 'oclc',
         'identifier': oclcNumber,
         'weight': 1
     })
+
+    generalInfo = marcRecord['008'][0].value
+    instance.language = generalInfo[35:38]
+    print(instance.language)
 
     # Code Fields (Identifiers)
     logger.debug('Parsing 0X0-0XX Fields')
@@ -50,7 +54,7 @@ def readFromMARC(marcRecord):
     for field in controlData:
         extractSubfieldValue(marcRecord, instance, field)
 
-    # Language Field
+    # Language Fields
     if len(marcRecord['041']) > 0:
         for lang in marcRecord['041'][0].subfield('a'):
             if instance.language is None:
@@ -89,14 +93,14 @@ def readFromMARC(marcRecord):
     # Physical Details
     # TODO Load fields into items/measurements?
     logger.debug('Parsing Extent (300) Field')
-    extantData = [
-        ('300', 'extant', 'a'),
-        ('300', 'extant', 'b'),
-        ('300', 'extant', 'c'),
-        ('300', 'extant', 'e'),
-        ('300', 'extant', 'f')
+    extentData = [
+        ('300', 'extent', 'a'),
+        ('300', 'extent', 'b'),
+        ('300', 'extent', 'c'),
+        ('300', 'extent', 'e'),
+        ('300', 'extent', 'f')
     ]
-    for field in extantData:
+    for field in extentData:
         extractSubfieldValue(marcRecord, instance, field)
 
     # Series Details

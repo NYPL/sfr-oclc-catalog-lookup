@@ -80,7 +80,7 @@ class InstanceRecord(DataObject):
         self.pub_place = None
         self.pub_date = None
         self.edition = None
-        self.extant = None
+        self.extent = None
         self.edition_statement = None
         self.table_of_contents = None
         self.copyright_date = None
