@@ -1,7 +1,8 @@
+import re
 from datetime import datetime
 
 from helpers.logHelpers import createLog
-from lib.dataModel import InstanceRecord, Agent
+from lib.dataModel import InstanceRecord, Agent, Link, Identifier
 
 logger = createLog('classify_parse')
 
@@ -50,11 +51,12 @@ def readFromMARC(marcRecord):
         extractSubfieldValue(marcRecord, instance, field)
 
     # Language Field
-    for lang in marcRecord['041'][0].subfield('a'):
-        if instance.language is None:
-            instance.language = lang.value
-        else:
-            instance.language += ';{}'.format(lang.value)
+    if len(marcRecord['041']) > 0:
+        for lang in marcRecord['041'][0].subfield('a'):
+            if instance.language is None:
+                instance.language = lang.value
+            else:
+                instance.language += ';{}'.format(lang.value)
 
     # Title Fields
     logger.debug('Parsing 21X-24X Fields')
@@ -144,13 +146,17 @@ def extractHoldingsLinks(holdings, instance):
             logger.info('Could not load URI for identifier, skipping')
             continue
 
+
+        uriIdentifier = re.search(r'\/((?:(?!\/).)+)$', uri).group(1)
+
         try:
             holdingFormat = holding.subfield('q')[0].value
             if 'epub' in holdingFormat.lower():
                 logger.info('Adding format for instance record for {}'.format(uri))
                 instance.addFormat(**{
                     'content_type': holdingFormat,
-                    'link': uri
+                    'link': Link(url=uri, mediaType='text/html'),
+                    'identifier': Identifier(identifier=uriIdentifier)
                 })
                 continue
         except IndexError:
@@ -162,7 +168,8 @@ def extractHoldingsLinks(holdings, instance):
                 logger.info('Adding format for instance record for {}'.format(uri))
                 instance.addFormat(**{
                     'content_type': 'ebook',
-                    'link': uri
+                    'link': Link(url=uri, mediaType='text/html'),
+                    'identifier': Identifier(identifier=uriIdentifier)
                 })
                 continue
         except IndexError:
