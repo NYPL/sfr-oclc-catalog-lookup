@@ -14,14 +14,8 @@ def fetchData(record):
     the corresponding record."""
 
     try:
-        sourceData = record['data']
-    except KeyError:
-        logger.error('Missing data from input event')
-        raise DataError('No data received in Kinesis record')
-
-    try:
-        idenType = sourceData['type']
-        identifier = sourceData['identifier']
+        idenType = record['type']
+        identifier = record['identifier']
     except KeyError as e:
         logger.error('Missing attribute in data block!')
         logger.debug(e)
