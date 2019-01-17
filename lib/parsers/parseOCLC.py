@@ -262,6 +262,12 @@ def extractSubfieldValue(data, record, fieldData):
                     'identifier': fieldValue.strip(),
                     'weight': 1
                 })
+            elif attr in ['pub_date', 'copyright_date']:
+                record.addDate(**{
+                    'display_date': fieldValue,
+                    'date_range': fieldValue,
+                    'date_type': attr
+                })
             else:
                 if record[attr] is None:
                     record[attr] = fieldValue
