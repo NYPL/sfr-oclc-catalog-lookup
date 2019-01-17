@@ -1,7 +1,9 @@
 boto3
 coverage
 flake8
+lxml
 marcalyx
 python-lambda
+python-levenshtein
 pyyaml
 requests
