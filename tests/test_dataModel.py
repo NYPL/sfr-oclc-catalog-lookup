@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, mock_open, call
 
-from lib.dataModel import DataObject, WorkRecord, Format, Link, Agent, Measurement, Date
+from lib.dataModel import DataObject, WorkRecord, Format, Link, Agent, Measurement
 
 class DataModel(unittest.TestCase):
 
@@ -97,8 +97,3 @@ class DataModel(unittest.TestCase):
         measure = Measurement('test', 2, 1, 'now')
         value = Measurement.getValueForMeasurement([measure], 'test')
         self.assertEqual(value, 2)
-
-    def test_date_create(self):
-        testDate = Date('1999', '1999', 'test_date')
-        self.assertIsInstance(testDate, Date)
-        self.assertEqual(testDate.display_date, '1999')
