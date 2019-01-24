@@ -13,8 +13,10 @@ class TestFetcher(unittest.TestCase):
     @patch('lib.recordFetch.KinesisOutput.putRecord')
     def test_basic_fetcher(self, mock_parse, mock_lookup, mock_put):
         testRec = {
-            'type': 'oclc',
-            'identifier': '000000000'
+            'data': {
+                'type': 'oclc',
+                'identifier': '000000000'
+            }
         }
 
         res = fetchData(testRec)
@@ -47,8 +49,10 @@ class TestFetcher(unittest.TestCase):
 
     def test_non_oclc_identifier(self):
         testRec = {
-            'type': 'isbn',
-            'identifier': '0000000000'
+            'data': {
+                'type': 'isbn',
+                'identifier': '0000000000'
+            }
         }
 
         try:

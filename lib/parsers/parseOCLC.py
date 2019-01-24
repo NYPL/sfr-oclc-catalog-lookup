@@ -151,7 +151,11 @@ def extractHoldingsLinks(holdings, instance):
             continue
 
 
-        uriIdentifier = re.search(r'\/((?:(?!\/).)+)$', uri).group(1)
+        uriGroup = re.search(r'\/((?:(?!\/).)+)$', uri)
+        if uriGroup is not None:
+            uriIdentifier = uriGroup.group(1)
+        else:
+            uriIdentifier = uri
 
         try:
             holdingFormat = holding.subfield('q')[0].value

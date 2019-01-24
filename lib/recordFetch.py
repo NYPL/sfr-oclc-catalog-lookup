@@ -14,11 +14,13 @@ def fetchData(record):
     the corresponding record."""
 
     try:
-        idenType = record['type']
-        identifier = record['identifier']
+        dataBlock = record['data']
+        idenType = dataBlock['type']
+        identifier = dataBlock['identifier']
     except KeyError as e:
         logger.error('Missing attribute in data block!')
         logger.debug(e)
+        logger.debug(record)
         raise DataError('Required attribute missing from data block')
     except TypeError as e:
         logger.error('Could not read data from source')
