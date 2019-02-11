@@ -223,7 +223,11 @@ def extractSubjects(data, instance, field):
                 pass
 
         if subj.ind2 != '7':
-            subject['authority'] = SUBJECT_INDICATORS[subj.ind2]
+            try:
+                subject['authority'] = SUBJECT_INDICATORS[subj.ind2]
+            except KeyError as err:
+                logger.error('Unknown subject authority found for {}', instance)
+                logger.debug(err)
         else:
             try:
                 subject['authority'] = subj.subfield('2')[0].value
