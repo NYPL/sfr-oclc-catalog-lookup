@@ -225,7 +225,10 @@ def extractSubjects(data, instance, field):
         if subj.ind2 != '7':
             subject['authority'] = SUBJECT_INDICATORS[subj.ind2]
         else:
-            subject['authority'] = subj.subfield('2')[0].value
+            try:
+                subject['authority'] = subj.subfield('2')[0].value
+            except IndexError:
+                pass
 
         try:
             subject['uri'] = subj.subfield('0')[0].value
