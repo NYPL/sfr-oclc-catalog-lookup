@@ -14,9 +14,8 @@ def fetchData(record):
     the corresponding record."""
 
     try:
-        dataBlock = record['data']
-        idenType = dataBlock['type']
-        identifier = dataBlock['identifier']
+        idenType = record['type']
+        identifier = record['identifier']
     except KeyError as e:
         logger.error('Missing attribute in data block!')
         logger.debug(e)
