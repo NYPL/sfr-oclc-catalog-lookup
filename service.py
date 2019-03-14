@@ -45,15 +45,13 @@ def parseRecord(encodedRec):
     decoded from the input base64 encoded string and if so, hands this to the
     enhancer method"""
     try:
-        record = json.loads(base64.b64decode(encodedRec['kinesis']['data']))
+        record = json.loads(encodedRec['body'])
         return fetchData(record)
     except json.decoder.JSONDecodeError as jsonErr:
         logger.error('Invalid JSON block recieved')
         logger.error(jsonErr)
-    except UnicodeDecodeError as b64Err:
-        logger.error('Invalid data found in base64 encoded block')
-        logger.debug(b64Err)
-    except (OCLCError, DataError):
-        logger.warning('Error raised during processing, no data fetched from OCLC')
-
-    return False
+        raise DataError('Malformed JSON block recieved from SQS')
+    except KeyError as err:
+        logger.error('Missing body attribute in SQS message')
+        logger.debug(err)
+        raise DataError('Body object missing from SQS message')
