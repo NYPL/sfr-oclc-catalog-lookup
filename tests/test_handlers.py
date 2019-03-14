@@ -51,7 +51,7 @@ class TestHandler(unittest.TestCase):
         self.assertRaises(NoRecordsReceived)
 
 
-    @patch('service.parseRecord', return_value=[1,2])
+    @patch('service.parseRecord', side_effect=[1,2])
     def test_parseRecords(self, mock_parse):
         records = [
             {
@@ -75,31 +75,21 @@ class TestHandler(unittest.TestCase):
         'stage': 'oclc',
         'data': 'test data'
     })
-    def test_parseRecords(self, mock_fetch, mock_json):
-        res = parseRecord({'kinesis': {'data': ''}})
+    def test_parseRecord(self, mock_fetch, mock_json):
+        res = parseRecord({'body': {'data': ''}})
         mock_fetch.assert_called_once()
         mock_json.assert_called_once()
         self.assertTrue(res)
 
-    @patch('json.loads', return_value={
-        'status': 500,
-        'stage': 'oclc',
-        'data': 'test data'
-    })
+    @patch('json.loads', side_effect=KeyError)
     def test_parseRecords_err(self, mock_json):
-        res = parseRecord({'kinesis': {'data': ''}})
-        mock_json.assert_called_once()
-        self.assertFalse(res)
-
-    @patch('json.loads', return_value={
-        'status': 200,
-        'stage': 'mw',
-        'data': 'test data'
-    })
+        with self.assertRaises(DataError):
+            parseRecord({'body': {'data': ''}})
+        
+    @patch('json.loads', side_effect=json.decoder.JSONDecodeError('test', 'test', 0))
     def test_parseRecords_bad_stage(self, mock_json):
-        res = parseRecord({'kinesis': {'data': ''}})
-        mock_json.assert_called_once()
-        self.assertFalse(res)
+        with self.assertRaises(DataError):
+            parseRecord({'body': {'data': ''}})
 
 
 if __name__ == '__main__':

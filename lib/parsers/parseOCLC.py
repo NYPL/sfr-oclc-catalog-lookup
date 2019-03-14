@@ -198,6 +198,7 @@ def _matchURIIdentifier(instance, uri, id_regex):
                 'identifier': idGroup.group(1),
                 'weight': 0.8
             })
+            return True
 
 
 def _matchRegexEbook(instance, uri, ebook_regex, uriIdentifier):
@@ -209,12 +210,19 @@ def _matchRegexEbook(instance, uri, ebook_regex, uriIdentifier):
                 'link': Link(url=uri, mediaType='text/html'),
                 'identifier': Identifier(identifier=uriIdentifier)
             })
+            return True
 
 
 def _addEbook(instance, holding, subfield, uri, uriIdentifier):
     try:
         fieldText = holding.subfield(subfield)[0].value
-        uriSource = re.search(r'([a-z0-9]+)\.[a-z]{2,3}(?:$|\/|\.[a-z]{2}(?:$|\/))', uri).group(1)
+        try:
+            uriSource = re.search(
+                r'([a-z0-9]+)\.[a-z]{2,4}(?:$|\/|:[0-9]{2,5}|\.[a-z]{2}(?:$|\/))',
+                    uri
+            ).group(1)
+        except AttributeError:
+            uriSource = uri
         if 'epub' in fieldText.lower() or 'ebook' in fieldText.lower():
             logger.info('Adding format for instance record for {}'.format(uri))
             instance.addFormat(**{
