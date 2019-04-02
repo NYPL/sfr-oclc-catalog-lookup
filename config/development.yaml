@@ -3,5 +3,4 @@
 environment_variables:
     LOG_LEVEL: debug
     OUTPUT_REGION: us-east-1
-    OUTPUT_KINESIS: sfr-db-ingest-development
-    OUTPUT_SHARD: '0'
+    OUTPUT_KINESIS: sfr-db-update-development
