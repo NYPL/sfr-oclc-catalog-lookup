@@ -207,8 +207,8 @@ def _matchRegexEbook(instance, uri, ebook_regex, uriIdentifier):
             instance.addFormat(**{
                 'source': source,
                 'content_type': 'ebook',
-                'link': Link(url=uri, mediaType='text/html'),
-                'identifier': Identifier(identifier=uriIdentifier)
+                'links': [Link(url=uri, mediaType='text/html', relType='external_view')],
+                'identifiers': [Identifier(identifier=uriIdentifier)]
             })
             return True
 
@@ -228,8 +228,8 @@ def _addEbook(instance, holding, subfield, uri, uriIdentifier):
             instance.addFormat(**{
                 'source': uriSource,
                 'content_type': 'ebook',
-                'link': Link(url=uri, mediaType='text/html'),
-                'identifier': Identifier(identifier=uriIdentifier)
+                'links': [Link(url=uri, mediaType='text/html', relType='external_view')],
+                'identifiers': [Identifier(identifier=uriIdentifier)]
             })
             return True
     except IndexError:
