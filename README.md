@@ -1,22 +1,31 @@
 # OCLC Lookup Service
+
+[![Build Status](https://travis-ci.com/NYPL/sfr-oclc-catalog-lookup.svg?branch=development)](https://travis-ci.com/NYPL/sfr-oclc-catalog-lookup)
+![GitHub tag (latest SemVer)](https://img.shields.io/github/tag/nypl/sfr-oclc-catalog-lookup.svg)
+
 A lambda function that takes OCLC identifiers and returns a parsed version of the MARCXML record that is returned through the [OCLC Catalog lookup](https://www.oclc.org/developer/develop/web-services/worldcat-search-api/bibliographic-resource.en.html) service.
 
 The returned data corresponds to the Instance level records in the SFR data model.
 
 ## Version
-v0.0.1
+v0.1.0
 
 ## Note
 This code is based on the [Python Lambda Boilerplate](https://github.com/NYPL/python-lambda-boilerplate), and as a result can be run through the `make` commands detailed there such as `make test` and `make local-run`
 
 ## Dependencies
+
 - boto3
-- coverage
-- flake8
 - marcalyx
 - python-lambda
 - pyyaml
 - requests
+
+## Dev Dependencies
+
+- coverage
+- flake8
+
 
 ## Environment Variables
 - LOG_LEVEL
