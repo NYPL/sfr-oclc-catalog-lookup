@@ -78,8 +78,9 @@ class DataModel(unittest.TestCase):
 
     def test_format_setLink(self):
         testFormat = Format('ebook', 'test', 'now')
-        testFormat.setLink(**{'url': 'https://hello.hello', 'mediaType': 'text/html', 'relType': 'reference'})
-        self.assertEqual(testFormat.links[0].relType, 'reference')
+        testFlags = {'local': False, 'download': False, 'ebook': True}
+        testFormat.setLink(**{'url': 'https://hello.hello', 'mediaType': 'text/html', 'flags': testFlags})
+        self.assertTrue(testFormat.links[0].flags['ebook'])
 
     def test_agent_non_matching(self):
         new = [Agent('Test, Tester', 'tester')]

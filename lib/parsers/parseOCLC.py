@@ -176,7 +176,12 @@ def extractHoldingsLinks(holdings, instance):
         instance.addLink(**{
             'url': uri,
             'media_type': 'text/html',
-            'rel_type': 'associated'
+            'flags': {
+                'local': False,
+                'download': False,
+                'images': False,
+                'ebook': False
+            }
         })
 
 
@@ -204,10 +209,16 @@ def _matchURIIdentifier(instance, uri, id_regex):
 def _matchRegexEbook(instance, uri, ebook_regex, uriIdentifier):
     for source, regex in ebook_regex.items():
         if re.search(regex, uri):
+            bookFlags = {
+                'local': False,
+                'download': False,
+                'images': False,
+                'ebook': True
+            }
             instance.addFormat(**{
                 'source': source,
                 'content_type': 'ebook',
-                'links': [Link(url=uri, mediaType='text/html', relType='external_view')],
+                'links': [Link(url=uri, mediaType='text/html', flags=bookFlags)],
                 'identifiers': [Identifier(identifier=uriIdentifier)]
             })
             return True
@@ -225,10 +236,16 @@ def _addEbook(instance, holding, subfield, uri, uriIdentifier):
             uriSource = uri
         if 'epub' in fieldText.lower() or 'ebook' in fieldText.lower():
             logger.info('Adding format for instance record for {}'.format(uri))
+            bookFlags = {
+                'local': False,
+                'download': False,
+                'images': False,
+                'ebook': True
+            }
             instance.addFormat(**{
                 'source': uriSource,
                 'content_type': 'ebook',
-                'links': [Link(url=uri, mediaType='text/html', relType='external_view')],
+                'links': [Link(url=uri, mediaType='text/html', flags=bookFlags)],
                 'identifiers': [Identifier(identifier=uriIdentifier)]
             })
             return True
