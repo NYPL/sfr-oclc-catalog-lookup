@@ -8,7 +8,7 @@ A lambda function that takes OCLC identifiers and returns a parsed version of th
 The returned data corresponds to the Instance level records in the SFR data model.
 
 ## Version
-v0.1.0
+v0.1.1
 
 ## Note
 This code is based on the [Python Lambda Boilerplate](https://github.com/NYPL/python-lambda-boilerplate), and as a result can be run through the `make` commands detailed there such as `make test` and `make local-run`
