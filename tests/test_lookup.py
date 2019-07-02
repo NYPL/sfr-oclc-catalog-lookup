@@ -2,6 +2,7 @@ import unittest
 from unittest.mock import patch, mock_open, call
 from collections import namedtuple
 from lxml import etree
+from requests.exceptions import ConnectionError
 
 from lib.readers.oclcLookup import lookupRecord, parseMARC, catalogLookup, createURL
 
@@ -70,6 +71,14 @@ class TestLookup(unittest.TestCase):
         except OCLCError:
             pass
         self.assertRaises(OCLCError)
+    
+    reqReturn = namedtuple('Return', ['status_code', 'text'])
+    reqReturn.status_code=200
+    reqReturn.text = True
+    @patch('lib.readers.oclcLookup.requests.get', side_effect=[ConnectionError, reqReturn])
+    def test_requests_retry_success(self, mock_request):
+        res = catalogLookup('url')
+        self.assertTrue(res)
 
     @patch.dict('os.environ', {'OCLC_KEY': '000'})
     def test_create_url(self):
