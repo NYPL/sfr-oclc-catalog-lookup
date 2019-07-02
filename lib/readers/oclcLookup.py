@@ -1,4 +1,5 @@
 import requests
+from requests.exceptions import Timeout, ConnectionError
 import os
 from lxml import etree
 import marcalyx
@@ -52,7 +53,12 @@ def parseMARC(marcData):
 
 def catalogLookup(queryURL):
     """Execute a request against the OCLC Catalog service"""
-    classifyResp = requests.get(queryURL)
+    try:
+        classifyResp = requests.get(queryURL, timeout=2)
+    except (Timeout, ConnectionError):
+        logger.warning('Failed to query URL {}'.format(queryURL))
+        classifyResp = requests.get(queryURL, timeout=5)
+
     if classifyResp.status_code != 200:
         logger.error('OCLC Catalog Request failed')
         logger.debug(classifyResp.body)
