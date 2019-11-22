@@ -33,9 +33,7 @@ def readFromMARC(marcRecord):
         'weight': 1
     })
 
-    generalInfo = marcRecord['008'][0].value
-    instance.language = generalInfo[35:38]
-    print(instance.language)
+    parsedDate = parse008ControlField(marcRecord['008'][0].value, instance)
 
     # Code Fields (Identifiers)
     logger.debug('Parsing 0X0-0XX Fields')
@@ -90,6 +88,8 @@ def readFromMARC(marcRecord):
     for field in editionData:
         extractSubfieldValue(marcRecord, instance, field)
 
+    parsePubDate(instance.dates, parsedDate)
+
     # Physical Details
     # TODO Load fields into items/measurements?
     logger.debug('Parsing Extent (300) Field')
@@ -138,6 +138,20 @@ def readFromMARC(marcRecord):
     # 80X-83X
 
     return instance
+
+
+def parse008ControlField(fieldData, instance):
+    instance.language = fieldData[35:38]
+    logger.debug('Found language code {} in 008 field'.format(
+        instance.language)
+    )
+
+    return fieldData[7:11]
+
+
+def parsePubDate(dates, parsedPubDate):
+    pubDate = list(filter(lambda x: x['date_type'] == 'pub_date', dates))[0]
+    pubDate.date_range = parsedPubDate
 
 
 def extractHoldingsLinks(holdings, instance):
