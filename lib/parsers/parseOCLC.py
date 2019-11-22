@@ -158,7 +158,8 @@ def extractHoldingsLinks(holdings, instance):
 
     ebook_regex = {
         'gutenberg': r'gutenberg.org\/ebooks\/[0-9]+\.epub\.(?:no|)images$',
-        'internetarchive': r'archive.org\/details\/[a-z0-9]+$'
+        'internetarchive': r'archive.org\/details\/[a-z0-9]+$',
+        'hathitrust': r'catalog.hathitrust.org\/api\/volumes\/[a-z]{3,6}\/[a-zA-Z0-9]+\.html'  # noqa: E901
     }
 
     id_regex = {
@@ -179,13 +180,9 @@ def extractHoldingsLinks(holdings, instance):
         if _matchRegexEbook(instance, uri, ebook_regex, uriIdentifier):
             continue
 
-        if _addEbook(instance, holding, 'q', uri, uriIdentifier):
-            continue
-        if _addEbook(instance, holding, 'z', uri, uriIdentifier):
-            continue
-
         if _matchURIIdentifier(instance, uri, id_regex):
             continue
+
         logger.info('Adding link relationship for {}'.format(uri))
         instance.addLink(**{
             'url': uri,
@@ -200,7 +197,7 @@ def extractHoldingsLinks(holdings, instance):
 
 
 def _loadURIIdentifier(uri):
-    uriGroup = re.search(r'\/((?:(?!\/).)+)$', uri)
+    uriGroup = re.search(r'\/((?:(?!\/)[^.])+(?=$|\.[a-z]{3,4}$))', uri)
     if uriGroup is not None:
         uriIdentifier = uriGroup.group(1)
     else:
@@ -232,41 +229,12 @@ def _matchRegexEbook(instance, uri, ebook_regex, uriIdentifier):
             instance.addFormat(**{
                 'source': source,
                 'content_type': 'ebook',
-                'links': [Link(url=uri, mediaType='text/html', flags=bookFlags)],
+                'links': [
+                    Link(url=uri, mediaType='text/html', flags=bookFlags)
+                ],
                 'identifiers': [Identifier(identifier=uriIdentifier)]
             })
             return True
-
-
-def _addEbook(instance, holding, subfield, uri, uriIdentifier):
-    try:
-        fieldText = holding.subfield(subfield)[0].value
-        try:
-            uriSource = re.search(
-                r'([a-z0-9]+)\.[a-z]{2,4}(?:$|\/|:[0-9]{2,5}|\.[a-z]{2}(?:$|\/))',
-                    uri
-            ).group(1)
-        except AttributeError:
-            uriSource = uri
-        if 'epub' in fieldText.lower() or 'ebook' in fieldText.lower():
-            logger.info('Adding format for instance record for {}'.format(uri))
-            bookFlags = {
-                'local': False,
-                'download': False,
-                'images': False,
-                'ebook': True
-            }
-            instance.addFormat(**{
-                'source': uriSource,
-                'content_type': 'ebook',
-                'links': [Link(url=uri, mediaType='text/html', flags=bookFlags)],
-                'identifiers': [Identifier(identifier=uriIdentifier)]
-            })
-            return True
-    except IndexError:
-        pass
-    
-    return False
 
 
 def extractSubjects(data, instance, field):
@@ -304,7 +272,9 @@ def extractSubjects(data, instance, field):
             try:
                 subject['authority'] = SUBJECT_INDICATORS[subj.ind2]
             except KeyError as err:
-                logger.error('Unknown subject authority found for {}'.format(instance))
+                logger.error('Unknown subject authority found for {}'.format(
+                    instance
+                ))
                 logger.debug(err)
         else:
             try:
