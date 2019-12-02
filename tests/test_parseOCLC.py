@@ -4,7 +4,6 @@ from unittest.mock import MagicMock, Mock, patch
 
 from lib.parsers.parseOCLC import (
     extractHoldingsLinks,
-    _addEbook,
     _loadURIIdentifier,
     _matchURIIdentifier,
     _matchRegexEbook
@@ -15,16 +14,12 @@ class TestOCLCParse(unittest.TestCase):
 
     @patch('lib.parsers.parseOCLC._loadURIIdentifier')
     @patch('lib.parsers.parseOCLC._matchRegexEbook', return_value=False)
-    @patch('lib.parsers.parseOCLC._addEbook', return_value=False)
     @patch('lib.parsers.parseOCLC._matchURIIdentifier', return_value=False)
-    def test_holdings_extraction(self, mock_load, mock_match, mock_add, mock_matchURI):
-        mock_add = MagicMock()
+    def test_holdings_extraction(self, mock_load, mock_match, mock_matchURI):
         mock_instance = MagicMock()
-        mock_instance.addLink = mock_add
         mock_holding = MagicMock()
         mock_holding.ind1 = '4'
         extractHoldingsLinks([mock_holding], mock_instance)
-        mock_add.assert_called_once()
     
 
     def test_holdings_skip_field(self):
@@ -47,36 +42,6 @@ class TestOCLCParse(unittest.TestCase):
         extractHoldingsLinks([mock_holding], mock_instance)
         mock_add.assert_not_called()
 
-    def test_add_ebook(self):
-        mock_value = MagicMock()
-        mock_value.value = 'An epub!'
-        mock_holding = MagicMock()
-        mock_holding.subfield.return_value = [mock_value]
-        mock_instance = MagicMock()
-        res = _addEbook(
-            mock_instance,
-            mock_holding,
-            't',
-            'http://test.com/1234.epub',
-            '1234.epub'
-        )
-        self.assertTrue(res)
-    
-    def test_add_ebook_skip(self):
-        mock_value = MagicMock()
-        mock_value.value = 'Not a Copy'
-        mock_holding = MagicMock()
-        mock_holding.subfield.return_value = [mock_value]
-        mock_instance = MagicMock()
-        res = _addEbook(
-            mock_instance,
-            mock_holding,
-            't',
-            'http://another.test.co.uk/1234',
-            '1234'
-        )
-        self.assertEqual(res, False)
-    
     def test_load_identifier(self):
         uriID = _loadURIIdentifier('http://test.org/a1b2c3c4')
         self.assertEqual(uriID, 'a1b2c3c4')
