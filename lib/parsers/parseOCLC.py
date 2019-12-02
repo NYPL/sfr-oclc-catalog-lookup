@@ -159,7 +159,7 @@ def extractHoldingsLinks(holdings, instance):
     ebook_regex = {
         'gutenberg': r'gutenberg.org\/ebooks\/[0-9]+\.epub\.(?:no|)images$',
         'internetarchive': r'archive.org\/details\/[a-z0-9]+$',
-        'hathitrust': r'catalog.hathitrust.org\/api\/volumes\/[a-z]{3,6}\/[a-zA-Z0-9]+\.html'  # noqa: E901
+        'hathitrust': r'catalog.hathitrust.org\/api\/volumes\/[a-z]{3,6}\/[a-zA-Z0-9]+\.html'  # noqa: E501
     }
 
     id_regex = {
@@ -197,6 +197,12 @@ def extractHoldingsLinks(holdings, instance):
 
 
 def _loadURIIdentifier(uri):
+    # Regex to extract identifier from an URI
+    # \/((?:(?!\/)[^.])+ matches the path of the URI, excluding anything before
+    # the final slash (e.g. will match "1234" from http://test.com/1234)
+    # (?=$|\.[a-z]{3,4}$)) is a positive lookahead that excludes the file
+    # format from the identifier (so the above will still return "1234" if the
+    # URI ends in "1234.epub")
     uriGroup = re.search(r'\/((?:(?!\/)[^.])+(?=$|\.[a-z]{3,4}$))', uri)
     if uriGroup is not None:
         uriIdentifier = uriGroup.group(1)
