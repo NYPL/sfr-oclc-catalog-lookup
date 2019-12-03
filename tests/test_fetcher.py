@@ -14,7 +14,8 @@ class TestFetcher(unittest.TestCase):
     def test_basic_fetcher(self, mock_parse, mock_lookup, mock_put):
         testRec = {
             'type': 'oclc',
-            'identifier': '000000000'
+            'identifier': '000000000',
+            'uuid': 'testUUID'
         }
 
         res = fetchData(testRec)
@@ -26,11 +27,8 @@ class TestFetcher(unittest.TestCase):
             'recordID': 1
         }
 
-        try:
-            res = fetchData(testRec)
-        except DataError:
-            pass
-        self.assertRaises(DataError)
+        with self.assertRaises(DataError):
+            fetchData(testRec)
 
     def test_enhancer_err(self):
         testRec = {
@@ -39,20 +37,15 @@ class TestFetcher(unittest.TestCase):
             'data': 'some data'
         }
 
-        try:
-            res = fetchData(testRec)
-        except DataError:
-            pass
-        self.assertRaises(DataError)
+        with self.assertRaises(DataError):
+            fetchData(testRec)
 
     def test_non_oclc_identifier(self):
         testRec = {
             'type': 'isbn',
-            'identifier': '0000000000'
+            'identifier': '0000000000',
+            'uuid': 'testUUID'
         }
 
-        try:
-            res = fetchData(testRec)
-        except OCLCError:
-            pass
-        self.assertRaises(OCLCError)
+        with self.assertRaises(OCLCError):
+            fetchData(testRec)
