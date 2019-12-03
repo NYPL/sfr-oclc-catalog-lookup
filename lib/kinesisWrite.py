@@ -17,20 +17,18 @@ class KinesisOutput():
         pass
 
     @classmethod
-    def putRecord(cls, outputObject, stream):
+    def putRecord(cls, outputObject, stream, workUUID):
         """Put an event into the specific Kinesis stream"""
         logger.info("Writing results to Kinesis")
 
         # The default lambda function here converts all objects into dicts
         kinesisStream = KinesisOutput._convertToJSON(outputObject)
 
-        partKey = outputObject['data'].identifiers[0].identifier
-
         try:
-            kinesisResp = cls.KINESIS_CLIENT.put_record(
+            cls.KINESIS_CLIENT.put_record(
                 StreamName=stream,
                 Data=kinesisStream,
-                PartitionKey=partKey
+                PartitionKey=workUUID
             )
         except:
             logger.error('Kinesis Write error!')

@@ -16,6 +16,7 @@ def fetchData(record):
     try:
         idenType = record['type']
         identifier = record['identifier']
+        workUUID = record['uuid']
     except KeyError as e:
         logger.error('Missing attribute in data block!')
         logger.debug(e)
@@ -43,7 +44,7 @@ def fetchData(record):
             'method': 'update',
             'data': parsedData
         }
-        KinesisOutput.putRecord(outputObject, os.environ['OUTPUT_KINESIS'])
+        KinesisOutput.putRecord(outputObject, os.environ['OUTPUT_KINESIS'], workUUID)
 
     except OCLCError as err:
         logger.error('OCLC Query failed with message: {}'.format(err.message))
