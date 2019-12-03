@@ -60,8 +60,10 @@ def catalogLookup(queryURL):
         classifyResp = requests.get(queryURL, timeout=5)
 
     if classifyResp.status_code != 200:
-        logger.error('OCLC Catalog Request failed')
-        logger.debug(classifyResp.body)
+        logger.error('OCLC Catalog Request failed with status {}'.format(
+            classifyResp.status_code
+        ))
+        logger.debug(classifyResp.text)
         raise OCLCError('Failed to reach OCLC Catalog Service')
 
     classifyBody = classifyResp.text
