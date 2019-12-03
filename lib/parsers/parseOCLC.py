@@ -88,7 +88,7 @@ def readFromMARC(marcRecord):
     for field in editionData:
         extractSubfieldValue(marcRecord, instance, field)
 
-    parsePubDate(instance.dates, parsedDate)
+    parsePubDate(instance.dates, parsedDate, instance)
 
     # Physical Details
     # TODO Load fields into items/measurements?
@@ -149,9 +149,18 @@ def parse008ControlField(fieldData, instance):
     return fieldData[7:11]
 
 
-def parsePubDate(dates, parsedPubDate):
-    pubDate = list(filter(lambda x: x['date_type'] == 'pub_date', dates))[0]
-    pubDate.date_range = parsedPubDate
+def parsePubDate(dates, parsedPubDate, instance):
+    try:
+        pubDate = list(filter(
+            lambda x: x['date_type'] == 'pub_date', dates
+        ))[0]
+        pubDate.date_range = parsedPubDate
+    except IndexError:
+        instance.addDate(**{
+            'display_date': parsedPubDate,
+            'date_range': parsedPubDate,
+            'date_type': 'pub_date'
+        })
 
 
 def extractHoldingsLinks(holdings, instance):
