@@ -6,91 +6,50 @@ from unittest.mock import patch, mock_open, call
 import os
 os.environ['OUTPUT_REGION'] = 'us-test-1'
 
-from service import handler, parseRecords, parseRecord
+from service import handler
 from helpers.errorHelpers import NoRecordsReceived, OCLCError, DataError
+from lib.outPutManager import OutputManager
 
 
 class TestHandler(unittest.TestCase):
-
-    @patch('service.parseRecords')
-    def test_handler_clean(self, mock_parse):
+    @patch('service.fetchData', return_value='oclcResponse')
+    @patch.object(OutputManager, 'formatResponse', return_value='outObject')
+    def test_handler_clean(self, mockResponse, mockFetch):
         testRec = {
-            'source': 'Kinesis',
-            'Records': [
-                {
-                    'kinesis': {
-                        'data': 'data'
-                    }
-                }
-            ]
+            'queryStringParameters': {
+                'identifier': '000000000',
+                'type': 'oclc'
+            }
         }
         resp = handler(testRec, None)
-        mock_parse.assert_called_once()
+        self.assertEqual(resp, 'outObject')
+        mockFetch.assert_called_once_with('000000000', 'oclc')
+        mockResponse.assert_called_once_with(200, 'oclcResponse')
 
-
-    def test_handler_error(self):
+    @patch.object(OutputManager, 'formatResponse', return_value='outObject')
+    def test_handler_error_bad_parameters(self, mockResponse):
         testRec = {
-            'source': 'Kinesis',
-            'Records': []
-        }
-        try:
-            handler(testRec, None)
-        except NoRecordsReceived:
-            pass
-        self.assertRaises(NoRecordsReceived)
-
-
-    def test_records_none(self):
-        testRec = {
-            'source': 'Kinesis'
-        }
-        try:
-            handler(testRec, None)
-        except NoRecordsReceived:
-            pass
-        self.assertRaises(NoRecordsReceived)
-
-
-    @patch('service.parseRecord', side_effect=[1,2])
-    def test_parseRecords(self, mock_parse):
-        records = [
-            {
-                'data': 'test1'
-            },{
-                'data': 'test2'
+            'queryStringParameters': {
+                'identifier': '000000000',
             }
-        ]
-        resCalls = [
-            call({'data': 'test1'}),
-            call({'data': 'test2'})
-        ]
-        res = parseRecords(records)
-        mock_parse.assert_has_calls(resCalls)
-        self.assertEqual(res, [1,2])
+        }
+        resp = handler(testRec, None)
+        self.assertEqual(resp, 'outObject')
+        mockResponse.assert_called_once_with(
+            400,
+            {'message': 'GET query must include identifier and type'}
+        )
 
-
-    @patch('service.fetchData', return_value=True)
-    @patch('json.loads', return_value={
-        'status': 200,
-        'stage': 'oclc',
-        'data': 'test data'
-    })
-    def test_parseRecord(self, mock_fetch, mock_json):
-        res = parseRecord({'body': {'data': ''}})
-        mock_fetch.assert_called_once()
-        mock_json.assert_called_once()
-        self.assertTrue(res)
-
-    @patch('json.loads', side_effect=KeyError)
-    def test_parseRecords_err(self, mock_json):
-        with self.assertRaises(DataError):
-            parseRecord({'body': {'data': ''}})
-        
-    @patch('json.loads', side_effect=json.decoder.JSONDecodeError('test', 'test', 0))
-    def test_parseRecords_bad_stage(self, mock_json):
-        with self.assertRaises(DataError):
-            parseRecord({'body': {'data': ''}})
-
-
-if __name__ == '__main__':
-    unittest.main()
+    @patch('service.fetchData', side_effect=OCLCError('Test Error'))
+    @patch.object(OutputManager, 'formatResponse', return_value='outObject')
+    def test_handler_internal_error(self, mockResponse, mockFetch):
+        testRec = {
+            'queryStringParameters': {
+                'identifier': '000000000',
+                'type': 'oclc'
+            }
+        }
+        resp = handler(testRec, None)
+        self.assertEqual(resp, 'outObject')
+        mockFetch.assert_called_once_with('000000000', 'oclc')
+        mockResponse.assert_called_once_with(500, {'message': 'Test Error'})

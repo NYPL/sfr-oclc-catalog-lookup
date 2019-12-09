@@ -6,15 +6,15 @@ import json
 import os
 os.environ['OUTPUT_REGION'] = 'us-test-1'
 
-from lib.kinesisWrite import KinesisOutput
+from lib.outPutManager import OutputManager
 from helpers.errorHelpers import KinesisError
 
 class TestKinesis(unittest.TestCase):
 
     @patch.dict('os.environ', {'OUTPUT_KINESIS': 'tester', 'OUTPUT_STAGE': 'test'})
-    @patch('lib.kinesisWrite.KinesisOutput._convertToJSON', return_value='testing')
+    @patch('lib.outPutManager.OutputManager._convertToJSON', return_value='testing')
     def test_putRecord(self, mock_convert):
-        kinesis = KinesisOutput()
+        kinesis = OutputManager()
         stubber = Stubber(kinesis.KINESIS_CLIENT)
         expResp = {
             'ShardId': '1',
@@ -41,9 +41,9 @@ class TestKinesis(unittest.TestCase):
         kinesis.putRecord(record, 'testStream', 'testUUID')
 
     @patch.dict('os.environ', {'OUTPUT_KINESIS': 'tester', 'OUTPUT_STAGE': 'test'})
-    @patch('lib.kinesisWrite.KinesisOutput._convertToJSON', return_value='testing')
+    @patch('lib.outPutManager.OutputManager._convertToJSON', return_value='testing')
     def test_putRecord_err(self, mock_convert):
-        kinesis = KinesisOutput()
+        kinesis = OutputManager()
         stubber = Stubber(kinesis.KINESIS_CLIENT)
 
         mock_data = MagicMock()
