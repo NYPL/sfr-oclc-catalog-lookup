@@ -1,5 +1,7 @@
-import re
 from datetime import datetime
+import re
+import requests
+from urllib.parse import quote_plus
 
 from helpers.logHelpers import createLog
 from lib.dataModel import InstanceRecord, Agent, Link, Identifier
@@ -88,7 +90,7 @@ def readFromMARC(marcRecord):
     for field in editionData:
         extractSubfieldValue(marcRecord, instance, field)
 
-    parsePubDate(instance.dates, parsedDate)
+    parsePubDate(instance.dates, parsedDate, instance)
 
     # Physical Details
     # TODO Load fields into items/measurements?
@@ -149,9 +151,18 @@ def parse008ControlField(fieldData, instance):
     return fieldData[7:11]
 
 
-def parsePubDate(dates, parsedPubDate):
-    pubDate = list(filter(lambda x: x['date_type'] == 'pub_date', dates))[0]
-    pubDate.date_range = parsedPubDate
+def parsePubDate(dates, parsedPubDate, instance):
+    try:
+        pubDate = list(filter(
+            lambda x: x['date_type'] == 'pub_date', dates
+        ))[0]
+        pubDate.date_range = parsedPubDate
+    except IndexError:
+        instance.addDate(**{
+            'display_date': parsedPubDate,
+            'date_range': parsedPubDate,
+            'date_type': 'pub_date'
+        })
 
 
 def extractHoldingsLinks(holdings, instance):
@@ -316,10 +327,7 @@ def extractSubfieldValue(data, record, fieldData):
             fieldValue = fieldInstance.subfield(subfield)[0].value
             if attr == 'agents':
                 role = fieldData[3]
-                record.agents.append(Agent(
-                    name=fieldValue,
-                    role=role
-                ))
+                record.agents.append(buildAgent(fieldValue, role))
             elif attr == 'identifiers':
                 controlField = fieldData[3]
                 record.addIdentifier(**{
@@ -346,3 +354,22 @@ def extractSubfieldValue(data, record, fieldData):
             field
         ))
         logger.debug(err)
+
+def buildAgent(name, role):
+
+    newAgent = Agent(name=name, role=role)
+
+    viafResp = requests.get('{}{}'.format(
+        'https://dev-platform.nypl.org/api/v0.1/research-now/viaf-lookup?queryName=',
+        quote_plus(name)
+    ))
+    responseJSON = viafResp.json()
+    logger.debug(responseJSON)
+    if 'viaf' in responseJSON:
+        if responseJSON['name'] != name:
+            newAgent.aliases.append(name)
+            newAgent.name = responseJSON.get('name', '')
+        newAgent.viaf = responseJSON.get('viaf', None)
+        newAgent.lcnaf = responseJSON.get('lcnaf', None)
+
+    return newAgent
