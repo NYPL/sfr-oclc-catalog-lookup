@@ -364,8 +364,9 @@ def buildAgent(name, role):
         quote_plus(name)
     )
     if role in ['publisher', 'manufacturer']:
-        queryStr = '{}&{}'.format(queryStr, 'queryType=publisher')
+        queryStr = '{}&{}'.format(queryStr, 'queryType=corporate')
 
+    print(queryStr)
     viafResp = requests.get(queryStr)
     responseJSON = viafResp.json()
     logger.debug(responseJSON)
