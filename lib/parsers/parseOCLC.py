@@ -359,10 +359,14 @@ def buildAgent(name, role):
 
     newAgent = Agent(name=name, role=role)
 
-    viafResp = requests.get('{}{}'.format(
+    queryStr = '{}{}'.format(
         'https://dev-platform.nypl.org/api/v0.1/research-now/viaf-lookup?queryName=',
         quote_plus(name)
-    ))
+    )
+    if role in ['publisher', 'manufacturer']:
+        queryStr = '{}&{}'.format(queryStr, 'queryType=publisher')
+
+    viafResp = requests.get(queryStr)
     responseJSON = viafResp.json()
     logger.debug(responseJSON)
     if 'viaf' in responseJSON:
