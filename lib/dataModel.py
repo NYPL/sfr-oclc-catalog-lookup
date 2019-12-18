@@ -139,7 +139,10 @@ class Agent(DataObject):
         self.lcnaf = None
         self.viaf = None
         self.biography = None
-        self.aliases = aliases
+        if aliases is None:
+            self.aliases = []
+        else:
+            self.aliases = aliases
         self.link = link
         self.dates = []
 
