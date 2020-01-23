@@ -6,7 +6,8 @@ from lib.parsers.parseOCLC import (
     extractHoldingsLinks,
     _loadURIIdentifier,
     _matchURIIdentifier,
-    _matchRegexEbook
+    _matchRegexEbook,
+    _checkIAItemStatus
 )
 from lib.dataModel import WorkRecord
 
@@ -107,3 +108,39 @@ class TestOCLCParse(unittest.TestCase):
             '12345'
         )
         mock_add.assert_not_called()
+    
+    @patch('lib.parsers.parseOCLC._checkIAItemStatus', return_value=True)
+    def test_match_ia_ebook_skip(self, mockIACheck):
+        ia_regex = {
+            'internetarchive': r'archive.org\/details\/[a-z0-9]+$',
+        }
+
+        outcome = _matchRegexEbook(
+            MagicMock(),
+            'https://archive.org/details/test00',
+            ia_regex,
+            1
+        )
+
+        self.assertEqual(outcome, None)
+
+
+    @patch('lib.parsers.parseOCLC.requests')
+    def test_check_ia_item_status_restricted(self, mockReq):
+        mockResp = MagicMock()
+        mockResp.status_code = 200
+        mockResp.json.return_value = {
+            'metadata': {'access-restricted-item': True}
+        }
+        mockReq.get.return_value = mockResp
+        self.assertTrue(_checkIAItemStatus('https://archive.org/details/test00'))
+    
+    @patch('lib.parsers.parseOCLC.requests')
+    def test_check_ia_item_status_open(self, mockReq):
+        mockResp = MagicMock()
+        mockResp.status_code = 200
+        mockResp.json.return_value = {
+            'metadata': {'access-restricted-item': False}
+        }
+        mockReq.get.return_value = mockResp
+        self.assertFalse(_checkIAItemStatus('https://archive.org/details/test00'))

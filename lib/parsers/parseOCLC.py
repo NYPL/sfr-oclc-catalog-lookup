@@ -237,6 +237,10 @@ def _matchURIIdentifier(instance, uri, id_regex):
 def _matchRegexEbook(instance, uri, ebook_regex, uriIdentifier):
     for source, regex in ebook_regex.items():
         if re.search(regex, uri):
+            if source == 'internetarchive':
+                if _checkIAItemStatus(uri) is True:
+                    return None
+
             bookFlags = {
                 'local': False,
                 'download': False,
@@ -252,6 +256,18 @@ def _matchRegexEbook(instance, uri, ebook_regex, uriIdentifier):
                 'identifiers': [Identifier(identifier=uriIdentifier)]
             })
             return True
+
+
+def _checkIAItemStatus(uri):
+    metadataURI = uri.replace('details', 'metadata')
+    metadataResp = requests.get(metadataURI)
+    if metadataResp.status_code == 200:
+        iaData = metadataResp.json()
+        iaMeta = iaData['metadata']
+        if iaMeta.get('access-restricted-item', False) is False:
+            return False
+    
+    return True
 
 
 def extractSubjects(data, instance, field):
@@ -366,7 +382,6 @@ def buildAgent(name, role):
     if role in ['publisher', 'manufacturer']:
         queryStr = '{}&{}'.format(queryStr, 'queryType=corporate')
 
-    print(queryStr)
     viafResp = requests.get(queryStr)
     responseJSON = viafResp.json()
     logger.debug(responseJSON)
