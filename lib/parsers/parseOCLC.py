@@ -4,7 +4,9 @@ import requests
 from urllib.parse import quote_plus
 
 from helpers.logHelpers import createLog
+from helpers.errorHelpers import HoldingError
 from lib.dataModel import InstanceRecord, Agent, Link, Identifier
+from lib.parsers.parse856Holding import HoldingParser
 
 logger = createLog('classify_parse')
 
@@ -166,109 +168,14 @@ def parsePubDate(dates, parsedPubDate, instance):
 
 
 def extractHoldingsLinks(holdings, instance):
-
-    ebook_regex = {
-        'gutenberg': r'gutenberg.org\/ebooks\/[0-9]+\.epub\.(?:no|)images$',
-        'internetarchive': r'archive.org\/details\/[a-z0-9]+$',
-        'hathitrust': r'catalog.hathitrust.org\/api\/volumes\/[a-z]{3,6}\/[a-zA-Z0-9]+\.html'  # noqa: E501
-    }
-
-    id_regex = {
-        'oclc': r'oclc\/([0-9]+)',
-        'gutenberg': r'gutenberg.org\/ebooks\/([0-9]+)$'
-    }
-
     for holding in holdings:
-        if holding.ind1 != '4':
-            continue
         try:
-            uri = holding.subfield('u')[0].value
-        except IndexError:
-            logger.info('Could not load URI for identifier, skipping')
-            continue
-        uriIdentifier = _loadURIIdentifier(uri)
-
-        if _matchRegexEbook(instance, uri, ebook_regex, uriIdentifier):
-            continue
-
-        if _matchURIIdentifier(instance, uri, id_regex):
-            continue
-
-        logger.info('Adding link relationship for {}'.format(uri))
-        instance.addLink(**{
-            'url': uri,
-            'media_type': 'text/html',
-            'flags': {
-                'local': False,
-                'download': False,
-                'images': False,
-                'ebook': False
-            }
-        })
-
-
-def _loadURIIdentifier(uri):
-    # Regex to extract identifier from an URI
-    # \/((?:(?!\/)[^.])+ matches the path of the URI, excluding anything before
-    # the final slash (e.g. will match "1234" from http://test.com/1234)
-    # (?=$|\.[a-z]{3,4}$)) is a positive lookahead that excludes the file
-    # format from the identifier (so the above will still return "1234" if the
-    # URI ends in "1234.epub")
-    uriGroup = re.search(r'\/((?:(?!\/)[^.])+(?=$|\.[a-z]{3,4}$))', uri)
-    if uriGroup is not None:
-        uriIdentifier = uriGroup.group(1)
-    else:
-        uriIdentifier = uri
-    return uriIdentifier
-
-
-def _matchURIIdentifier(instance, uri, id_regex):
-    for idType, regex in id_regex.items():
-        idGroup = re.search(regex, uri)
-        if idGroup is not None:
-            instance.addIdentifier(**{
-                'type': idType,
-                'identifier': idGroup.group(1),
-                'weight': 0.8
-            })
-            return True
-
-
-def _matchRegexEbook(instance, uri, ebook_regex, uriIdentifier):
-    for source, regex in ebook_regex.items():
-        if re.search(regex, uri):
-            if source == 'internetarchive':
-                if _checkIAItemStatus(uri) is True:
-                    return None
-
-            bookFlags = {
-                'local': False,
-                'download': False,
-                'images': False,
-                'ebook': True
-            }
-            instance.addFormat(**{
-                'source': source,
-                'content_type': 'ebook',
-                'links': [
-                    Link(url=uri, mediaType='text/html', flags=bookFlags)
-                ],
-                'identifiers': [Identifier(identifier=uriIdentifier)]
-            })
-            return True
-
-
-def _checkIAItemStatus(uri):
-    metadataURI = uri.replace('details', 'metadata')
-    metadataResp = requests.get(metadataURI)
-    if metadataResp.status_code == 200:
-        iaData = metadataResp.json()
-        iaMeta = iaData['metadata']
-        if iaMeta.get('access-restricted-item', False) is False:
-            return False
-    
-    return True
-
+            parse856 = HoldingParser(holding, instance)
+            parse856.parseField()
+            parse856.extractBookLinks()
+        except HoldingError as err:
+            logger.error('Unable to parse 856 field {}'.format(holding))
+            logger.debug(err)
 
 def extractSubjects(data, instance, field):
     subjectFields = ['a']
