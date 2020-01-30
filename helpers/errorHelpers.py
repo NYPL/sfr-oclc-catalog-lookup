@@ -28,3 +28,7 @@ class OCLCError(Exception):
 class KinesisError(Exception):
     def __init__(self, message):
         self.message = message
+
+class HoldingError(Exception):
+    def __init__(self, message):
+        self.message = message
