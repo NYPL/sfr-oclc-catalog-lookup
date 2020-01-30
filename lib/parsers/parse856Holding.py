@@ -155,7 +155,7 @@ class HoldingParser:
                     local=False, download=True, images=True, ebook=False
                 )
             ],
-            'identifiers': [Identifier(identifier=self.identifier)]
+            'identifiers': [Identifier(identifier=hathiID)]
         })
 
     @staticmethod
