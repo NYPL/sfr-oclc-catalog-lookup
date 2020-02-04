@@ -1,3 +1,6 @@
+import math
+from multiprocessing import Process, Pipe
+from multiprocessing.connection import wait
 import re
 import requests
 
@@ -121,8 +124,42 @@ class HoldingParser:
             hathiID = hathiIDGroup.group(1)
             hathiItems = self.fetchHathiItems(hathiID)
             if hathiItems:
-                for recItem in hathiItems:
-                    self.getNewItemLinks(recItem)
+                self.startHathiMultiprocess(hathiItems)
+    
+    def startHathiMultiprocess(self, hathiItems):
+        processes = []
+        outPipes = []
+        cores = 4
+
+        chunkSize = math.ceil(len(hathiItems) / cores)
+
+        for i in range(cores):
+            start = i * chunkSize
+            end = start + chunkSize
+
+            pConn, cConn = Pipe(duplex=False)
+            proc = Process(
+                target=self.processHathiChunk,
+                args=(hathiItems[start:end], cConn)
+            )
+            processes.append(proc)
+            outPipes.append(pConn)
+            proc.start()
+            cConn.close()
+
+        while outPipes:
+            for p in wait(outPipes):
+                try:
+                    newItem = p.recv()
+                    if newItem == 'DONE':
+                        outPipes.remove(p)
+                    else:
+                        self.instance.addFormat(**newItem) 
+                except EOFError:
+                    outPipes.remove(p)
+
+        for proc in processes:
+            proc.join()
 
     def fetchHathiItems(self, hathiID):
         apiURL = self.HATHI_METADATA_URL.format(
@@ -132,6 +169,15 @@ class HoldingParser:
         if apiResp.status_code == 200:
             catalogData = apiResp.json()
             return catalogData.get('items', [])
+    
+    def processHathiChunk(self, hathiItems, cConn):
+        for recItem in hathiItems:
+            newItem = self.getNewItemLinks(recItem)
+            if newItem is not None:
+                cConn.send(newItem)
+        
+        cConn.send('DONE')
+        cConn.close()
 
     def getNewItemLinks(self, recItem):
         if recItem.get('rightsCode', 'ic') in ['ic', 'icus', 'ic-world', 'und']:
@@ -142,7 +188,7 @@ class HoldingParser:
         hathiID = re.search(self.HATHI_ID_REGEX, realURL).group(1)
         downloadURL = self.HATHI_DOWNLOAD_URL.format(hathiID)
 
-        self.instance.addFormat(**{
+        return {
             'source': self.source,
             'content_type': 'ebook',
             'links': [
@@ -156,7 +202,7 @@ class HoldingParser:
                 )
             ],
             'identifiers': [Identifier(identifier=hathiID)]
-        })
+        }
 
     @staticmethod
     def createLink(uri, mediaType, local=False, download=False, images=False, ebook=False):
