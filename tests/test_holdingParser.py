@@ -193,17 +193,18 @@ class TestHoldingParse(unittest.TestCase):
         mockLoad.assert_not_called()
 
     @patch.multiple(
-        HoldingParser, fetchHathiItems=DEFAULT, getNewItemLinks=DEFAULT
+        HoldingParser, fetchHathiItems=DEFAULT, startHathiMultiprocess=DEFAULT
     )
-    def test_loadCatalogLinks_match_hathiID(self,
-                                            fetchHathiItems, getNewItemLinks):
+    def test_loadCatalogLinks_match_hathiID(
+        self, fetchHathiItems, startHathiMultiprocess
+    ):
         testInst = HoldingParser('mock856', 'mockInstance')
         testInst.uri = 'catalog.hathitrust.org/volumes/oclc/0123456.html'
         fetchHathiItems.return_value = ['item1', 'item2', 'item3']
         testInst.loadCatalogLinks()
         fetchHathiItems.assert_called_once()
-        getNewItemLinks.assert_has_calls([
-            call('item1'), call('item2'), call('item3')
+        startHathiMultiprocess.assert_called_once_with([
+            'item1', 'item2', 'item3'
         ])
 
     @patch('lib.parsers.parse856Holding.requests')
@@ -244,8 +245,9 @@ class TestHoldingParse(unittest.TestCase):
         testInst.source = 'hathitrust'
         testInst.identifier = '123465'
 
-        testInst.getNewItemLinks(testItem)
-        testInst.instance.addFormat.assert_called_once()
+        outItem = testInst.getNewItemLinks(testItem)
+        self.assertEqual(outItem['source'], 'hathitrust')
+        self.assertEqual(len(outItem['links']), 2)
         mockCreate.assert_has_calls([
             call(
                 'hathitrust.org/test?id=test.123465',
@@ -264,3 +266,44 @@ class TestHoldingParse(unittest.TestCase):
                 ebook=False
             )
         ])
+
+    def test_startHathiMultiprocess(self):
+        def fakeProcess(items, conn):
+            for i in items:
+                conn.send(i)
+            conn.send('DONE')
+            conn.close()
+        
+        with patch.object(HoldingParser, 'processHathiChunk', wraps=fakeProcess) as mockChunk:
+            mockInstance = MagicMock()
+            testInst = HoldingParser('mock856', mockInstance)
+            testInst.startHathiMultiprocess([{'test': 1}, {'test': 2}])
+
+            mockInstance.addFormat.assert_has_calls([call(test=1), call(test=2)])
+
+    def test_startHathiMultiprocess_raiseEOF(self):
+        def fakeProcess(items, conn):
+            for i in items:
+                conn.send(i)
+            conn.close()
+        
+        with patch.object(HoldingParser, 'processHathiChunk', wraps=fakeProcess) as mockChunk:
+            mockInstance = MagicMock()
+            testInst = HoldingParser('mock856', mockInstance)
+            testInst.startHathiMultiprocess([{'test': 1}, {'test': 2}])
+
+            mockInstance.addFormat.assert_has_calls([call(test=1), call(test=2)])
+
+    @patch.object(HoldingParser, 'getNewItemLinks')
+    def test_processHathiChunk(self, mockGetNew):
+        testInst = HoldingParser('mock856', 'mockInstance')
+        mockGetNew.side_effect = ['item1', None, 'item2']
+        mockConn = MagicMock()
+
+        testInst.processHathiChunk([1, 2, 3], mockConn)
+
+        mockGetNew.assert_has_calls([call(1), call(2), call(3)])
+        mockConn.send.assert_has_calls([
+            call('item1'), call('item2'), call('DONE')]
+        )
+        mockConn.close.assert_called_once()
