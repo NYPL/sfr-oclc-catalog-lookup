@@ -188,9 +188,9 @@ class Agent(DataObject):
 
 
 class Identifier(DataObject):
-    def __init__(self, type=None, identifier=None, weight=None):
+    def __init__(self, source=None, identifier=None, weight=None):
         super()
-        self.type = type
+        self.type = source
         self.identifier = identifier
         self.weight = weight
 
