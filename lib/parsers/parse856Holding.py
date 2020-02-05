@@ -24,7 +24,7 @@ class HoldingParser:
 
     HATHI_OCLC_REGEX = r'([a-z]+\/[a-z0-9]+)\.html$'
 
-    HATHI_ID_REGEX = r'id=([a-z\.0-9]+)'
+    HATHI_ID_REGEX = r'id=([a-z\.\/\$0-9]+)'
 
     HATHI_DOWNLOAD_URL = 'babel.hathitrust.org/cgi/imgsrv/download/pdf?id={}'
     HATHI_METADATA_URL = 'http://catalog.hathitrust.org/api/volumes/full/{}.json' 
@@ -87,7 +87,7 @@ class HoldingParser:
                             local=False, download=False, images=False, ebook=True
                         )
                     ],
-                    'identifiers': [Identifier(identifier=self.identifier)]
+                    'identifiers': [Identifier(identifier=self.identifier, source='hathi')]
                 })
                 return True
     
@@ -201,7 +201,7 @@ class HoldingParser:
                     local=False, download=True, images=True, ebook=False
                 )
             ],
-            'identifiers': [Identifier(identifier=hathiID)]
+            'identifiers': [Identifier(identifier=hathiID, source='hathi')]
         }
 
     @staticmethod
